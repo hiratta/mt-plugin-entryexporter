@@ -332,6 +332,34 @@ sub _export_entry {
         next unless $asset;
         @assets = ( @assets, $asset, _get_asset_ancestors( $asset ), $get_thumbnails->( $asset ) );
     }
+
+    # Check for assets in fields, not used in object assets.
+    my @asset_fields = MT->model( 'field' )->load(
+        {   blog_id => [ $entry->blog_id, 0 ],
+            obj_type => $entry->datasource,
+            type     => [ qw( file audio video image ) ]
+        }
+    );
+    foreach my $field ( @asset_fields ) {
+        my $basename = 'field.'.$field->basename;
+        my $value = $entry->$basename;
+        next unless $value;
+
+        my @asset_ids = ();
+        my @field_values = ref( $value ) eq 'ARRAY' ? \$value : ( $value );
+        foreach my $value ( @field_values ) {
+            if ( $value =~ /mt:asset-id="(\d+)"/ ) {
+                push @asset_ids, $1;
+            }
+        }
+
+        foreach my $asset_id ( @asset_ids ) {
+            my $asset = MT->model( 'asset' )->load( $asset_id );
+            next unless $asset;
+            @assets = ( @assets, $asset, _get_asset_ancestors( $asset ), $get_thumbnails->( $asset ) );
+        }
+    }
+
     my %tmp;
     @assets = grep { $tmp{$_->id}++ < 1; } (@assets);
 
