@@ -22,7 +22,7 @@ sub _cb_ts_entry_list_header {
             id="ee_imported"
             class="success"
             rebuild="">
-            <__trans phrase="Export finished.">
+            <__trans phrase="Import finished.">
         </mtapp:statusmsg>
     </mt:if>
     </div>
@@ -31,7 +31,7 @@ sub _cb_ts_entry_list_header {
 MTML
 
     $$tmpl_ref .= $mtml;
-    
+
     1;
 }
 
@@ -90,7 +90,7 @@ sub _hdlr_ee_start_export {
             return $app->trans_error( 'Archive::Zip is required.' );
         }
     }
-    
+
     if ( $app->param( 'all_selected' ) ) {
         $app->setup_filtered_ids;
     }
@@ -103,7 +103,7 @@ sub _hdlr_ee_start_export {
     unless ( $total_count ) {
         return return $app->error( 'Object has not been selected. (Please select objects in current website / blog.)' );
     }
-    
+
     my %params = (
         blog_id         => $blog->id,
         _type           => $type,
@@ -114,7 +114,7 @@ sub _hdlr_ee_start_export {
 
 sub _hdlr_ee_exporting {
     my $app = shift;
-    
+
     my $type = $app->param( '_type' );
     return $app->trans_error( 'Invalid request' ) unless $type eq 'entry' || $type eq 'page';
     my $limit = $plugin->get_config_value('per_page', 'system');
@@ -123,7 +123,7 @@ sub _hdlr_ee_exporting {
     my $offset = ($page - 1) * $limit;
     my $out = $app->param( 'out' ) || '';
     $out = '' if $out =~ /\W/;
-    
+
     my @ids = $app->param( 'id' );
     my %terms = (
         blog_id => $blog->id,
@@ -137,7 +137,7 @@ sub _hdlr_ee_exporting {
         } else {
             $dir = File::Spec->catdir( $app->config( 'TempDir' ), $out );
         }
-        
+
         my $text = '';
         my $count = 0;
         my $iter = MT->model( $type )->load_iter( \%terms, { offset => $offset, limit =>  $limit, 'sort' => 'id' } );
@@ -150,12 +150,12 @@ sub _hdlr_ee_exporting {
     } else {
         $out = time . $app->make_magic_token;
     }
-    
+
     my ( $start, $end );
     $start = $offset + 1;
     my @next_entries = MT->model( $type )->load( \%terms, { offset => $offset, limit =>  $limit } );
     $end = $offset + scalar( @next_entries );
-    
+
     if ( $start <= $end ) {
         my %params = (
             blog_id         => $blog->id,
@@ -183,14 +183,14 @@ sub _hdlr_ee_exporting {
 
 sub _hdlr_ee_exported {
     my $app = shift;
-    
+
     my $blog = $app->blog;
     my $type = $app->param( '_type' );
     my $out = $app->param( 'out' ) || '';
     $out = '' if $out =~ /\W/;
     my $t = int($app->param( 't' ));
     return $app->trans_error( 'Invalid request' ) unless $type eq 'entry' || $type eq 'page';
-    
+
     my $dir;
     my $path_exporting = $plugin->get_config_value( 'path_exporting', 'system');
     if ( $out ) {
@@ -234,7 +234,7 @@ sub _hdlr_ee_exported {
 
         _regist_tempfile( $zipfile );
     }
-    
+
     my %params = (
         blog_id => $blog->id,
         out     => $out,
@@ -248,25 +248,25 @@ sub _hdlr_ee_exported {
 
 sub _hdlr_ee_download {
     my $app = shift;
-    
+
     my $blog = $app->blog;
     my $out = $app->param( 'out' ) || '';
     $out = '' if $out =~ /\W/;
     my $t = int($app->param( 't' ));
     my $type = $app->param( '_type' );
     return $app->trans_error( 'Invalid request' ) unless $type eq 'entry' || $type eq 'page';
-    
+
     require MT::Util;
     my @tl = MT::Util::offset_time_list( $t, $blog );
     my $ts = sprintf '%04d%02d%02d%02d%02d%02d', $tl[5]+1900, $tl[4]+1, @tl[3,2,1,0];
-    
+
     $app->{ no_print_body } = 1;
     $app->set_header( 'Content-Disposition' => "attachment; filename=@{[ $type eq 'entry' ? 'entries' : 'pages' ]}-@{[ $ts ]}.zip" );
     $app->set_header( 'Pragma' => 'no-cache' );
     $app->send_http_header( 'application/zip' );
-    
+
     my $file = File::Spec->catdir( $app->config( 'TempDir' ), "$out.zip" );
-    
+
     open( FH, '<', $file );
     binmode FH;
     my $buf;
@@ -274,7 +274,7 @@ sub _hdlr_ee_download {
         $app->print( $buf, );
     }
     close FH;
-    
+
     return;
 }
 
@@ -284,13 +284,13 @@ sub _export_entry {
 
     my $type = $entry->can( 'class' ) ? $entry->class : $entry->datasource;
     my %data = _dump_object( $entry );
-    
+
     require MT::Util::YAML;
-    
+
     require File::Spec;
     my $entry_dir = File::Spec->catdir( $dir, "@{[ $entry->class ]}_@{[ $entry->id ]}" );
     _write_tempfile( File::Spec->catfile( $entry_dir, "$type.yaml" ), MT::Util::YAML::Dump( \%data ) );
-    
+
     my @categories = ();
     foreach my $category ( @{ $entry->categories() } ) {
         my @parent_categories = $category->parent_categories();
@@ -303,7 +303,7 @@ sub _export_entry {
         $categories_data{ "@{[ $category->class ]}_@{[ $category->id ]}" } = \%category_data;
     }
     _write_tempfile( File::Spec->catfile( $entry_dir, "categories.yaml" ), MT::Util::YAML::Dump( \%categories_data ) );
-    
+
     require MT::ObjectAsset;
     my @object_assets = MT::ObjectAsset->load(
         {   object_id => $entry->id,
@@ -311,7 +311,7 @@ sub _export_entry {
             object_ds => $entry->datasource
         }
     );
-    
+
     my $get_thumbnails;
     $get_thumbnails = sub {
         my ( $asset ) = @_;
@@ -325,7 +325,7 @@ sub _export_entry {
         }
         return @thumbnails;
     };
-    
+
     my @assets = ();
     foreach my $object_asset ( @object_assets ) {
         my $asset = MT->model( 'asset' )->load( $object_asset->asset_id );
@@ -334,7 +334,7 @@ sub _export_entry {
     }
     my %tmp;
     @assets = grep { $tmp{$_->id}++ < 1; } (@assets);
-    
+
     require MT::FileMgr;
     my $fmgr = $entry->blog->file_mgr || MT::FileMgr->new( 'Local' );
     my %assets_data;
@@ -350,7 +350,7 @@ sub _export_entry {
         $assets_data{ $basename } = \%asset_data;
     }
     _write_tempfile( File::Spec->catfile( $entry_dir, "assets.yaml" ), MT::Util::YAML::Dump( \%assets_data ) );
-    
+
     my %assets_map;
     foreach my $asset ( @assets ) {
         $assets_map{ $asset->id } = $asset->url;
@@ -373,11 +373,11 @@ sub _get_asset_ancestors {
 
 sub _dump_object {
     my ( $obj ) = @_;
-    
+
     my $type = $obj->can( 'class' ) ? $obj->class : $obj->datasource;
     my $model = MT->model( $type ) ? MT->model( $type ) : ref( $obj );
     my $column_names = $model->column_names;
-    
+
     if ( $obj->can( 'has_meta' ) && $obj->has_meta ) {
         eval { require CustomFields::Field };
         unless ( $@ ) {
@@ -387,7 +387,7 @@ sub _dump_object {
             }
         }
     }
-    
+
     my %data = ();
     foreach my $column_name ( @$column_names ) {
         $data{ $column_name } = $obj->$column_name;
@@ -408,7 +408,7 @@ sub _dump_object {
             push @placement_data, \%placement_data;
         }
         $data{ placements } = \@placement_data;
-        
+
         my @objectassets_data = ();
         my @objectassets = MT->model( 'objectasset' )->load( { blog_id => $obj->blog_id, object_ds => $obj->datasource, object_id => $obj->id } );
         foreach my $objectasset ( @objectassets ) {
@@ -417,7 +417,7 @@ sub _dump_object {
         }
         $data{ objectassets } = \@objectassets_data;
     }
-    
+
     return %data;
 }
 
@@ -457,12 +457,12 @@ sub _hdlr_ee_start_import {
     my $blog = $app->blog;
     my $type = $app->param( '_type' );
     return $app->trans_error( 'Invalid request' ) unless $type eq 'entry' || $type eq 'page';
-    
+
     eval { require Archive::Zip };
     if ( $@ ) {
         return $app->trans_error( 'Archive::Zip is required.' );
     }
-    
+
     my %params = (
         blog_id         => $blog->id,
         _type           => $type,
@@ -478,16 +478,16 @@ sub _hdlr_ee_importing {
     $app->validate_magic or return $app->trans_error( 'Permission denied.' );
     my $type = $app->param( '_type' );
     return $app->trans_error( 'Invalid request' ) unless $type eq 'entry' || $type eq 'page';
-    
+
     my $q = $app->param;
     my $override = $app->param( 'override' ) ? 1 : 0;
     if ( my $fh = $q->upload( 'file' ) ) {
         my $tmp_path = $q->tmpFileName( $fh );
         my $filename = File::Basename::basename( $fh, '.*' );
-        
+
         my $out = time . $app->make_magic_token;
         my $dir = File::Spec->catdir( $app->config( 'TempDir' ), $out );
-        
+
         require Archive::Zip;
         my $zip = Archive::Zip->new();
         unless ( $zip->read( $tmp_path ) == 0 ) {
@@ -514,12 +514,12 @@ sub _hdlr_ee_importing {
     } else {
         my $out = $app->param( 'out' ) || '';
         $out = '' if $out =~ /\W/;
-        
+
         my $dir = File::Spec->catdir( $app->config( 'TempDir' ), $out );
         unless ( $out && -d $dir ) {
             return $app->trans_error( 'Invalid request.' );
         }
-        
+
         opendir ( DIR, $dir );
         my @target;
         while ( defined ( my $path = readdir( DIR ) ) ) {
@@ -529,7 +529,7 @@ sub _hdlr_ee_importing {
             }
         }
         closedir ( DIR );
-        
+
         my $finish = @target ? 0 : 1;
         unless ( $finish ) {
             my $count = 0;
@@ -540,7 +540,7 @@ sub _hdlr_ee_importing {
                 $remnant--;
                 last if ( ++$count == 10 );
             }
-            
+
             my %params = (
                 blog_id         => $blog->id,
                 _type           => $type,
@@ -557,7 +557,7 @@ sub _hdlr_ee_importing {
             $app->call_return;
         }
     }
-    
+
 }
 
 sub _import_entry {
@@ -583,7 +583,7 @@ sub _import_entry {
             }
             $obj->blog_id( $blog->id );
             $obj->author_id( $user ? $user->id : undef );
-            
+
             $categories{ $old_id } = $obj;
         }
         _rebuild_category_tree( $blog, \%categories );
@@ -591,7 +591,7 @@ sub _import_entry {
             $objects{ "category_@{[ $old_id ]}" } = $categories{ $old_id };
         }
     }
-    
+
     my $assets_file = File::Spec->catfile( $entry_dir, 'assets.yaml' );
     if ( -f $assets_file ) {
         my $data = MT::Util::YAML::LoadFile( $assets_file );
@@ -617,11 +617,11 @@ sub _import_entry {
             $obj->blog_id( $blog->id );
             $obj->created_by( $user ? $user->id : undef );
             $obj->modified_by( undef );
-            
+
             my $src = File::Spec->catfile( $entry_dir, 'assets', $key );
             $fmgr->mkpath( File::Basename::dirname( $obj->file_path ) );
             $fmgr->put( $src, $obj->file_path );
-            
+
             $assets{ $old_id } = $obj;
         }
         _rebuild_asset_tree( $blog, \%assets );
@@ -638,7 +638,7 @@ sub _import_entry {
     }
     if ( -f $entry_file ) {
         my $data = MT::Util::YAML::LoadFile( $entry_file );
-        
+
         my $do_duplicate = 0;
         my $entry_basename = $data->{ basename };
         my $entry_created_on = $data->{ created_on };
@@ -661,13 +661,13 @@ sub _import_entry {
             }
             $obj = MT->model( $type )->new;
         }
-        
+
         my $old_id = $data->{ id };
         delete $data->{ id };
-        
+
         my $placements_data = delete $data->{ placements };
         my $objectassets_data = delete $data->{ objectassets };
-        
+
         my @asset_fields = ();
         my $field_class = MT->model( 'field' );
         foreach my $field ( keys %$data ) {
@@ -710,7 +710,7 @@ sub _import_entry {
         $obj->created_by( $user ? $user->id : undef );
         $obj->modified_by( undef );
         $obj->category_id( undef );
-        
+
         my $assets_map_file = File::Spec->catfile( $entry_dir, 'assets_map.yaml' );
         my $assets_map = MT::Util::YAML::LoadFile( $assets_map_file );
         if ( $assets_map && %$assets_map ) {
@@ -726,15 +726,15 @@ sub _import_entry {
             $obj->text( $body );
             $obj->text_more( $more );
         }
-        
+
         if ( $do_duplicate ) {
             require MT::Util;
             $obj->basename( MT::Util::make_unique_basename( $obj ) );
             $obj->title( $app->translate( "Copy of [_1]", $obj->title ) );
         }
-        
+
         $obj->save or die $obj->errstr;
-        
+
         my @old_placements = MT->model( 'placement' )->load( { blog_id => $obj->blog_id, entry_id => $obj->id } );
         foreach my $placement ( @old_placements ) {
             $placement->remove;
@@ -755,7 +755,7 @@ sub _import_entry {
             $placement->category_id( $category->id );
             $placement->save or die $placement->errstr;
         }
-        
+
         my @old_objectasset = MT->model( 'objectasset' )->load(
             {
                 blog_id     => $obj->blog_id,
@@ -785,7 +785,7 @@ sub _import_entry {
             $objectasset->asset_id( $asset->id );
             $objectasset->save or die $objectasset->errstr;
         }
-        
+
         foreach my $field_asset_data ( @asset_fields ) {
             my $basename = $field_asset_data->{ basename };
             my $field = 'field.' . $basename;
@@ -806,13 +806,13 @@ sub _import_entry {
             }
         }
         $obj->save or die $obj->errstr;
-        
+
         if ( $orig ) {
             _log( $plugin->translate( 'Updated \'[_1]\' (ID:[_2]).', $obj->title, $obj->id ), $obj->blog );
         } else {
             _log( $plugin->translate( 'Imported \'[_1]\' to [_2]', $obj->title, $obj->blog->name ), $obj->blog );
         }
-        
+
         $objects{ "${type}_@{[ $old_id ]}" } = $obj;
     }
 }
@@ -902,16 +902,16 @@ sub _update_or_replace_asset {
 sub import_entries {
     my ( $blog, $archive_path ) = @_;
     my $app = MT->instance;
-    
+
     eval { require Archive::Zip };
     if ( $@ ) {
         return $app->trans_error( 'Archive::Zip is required.' );
     }
-    
+
     my $filename = File::Basename::basename( $archive_path, '.*' );
     my $out = $filename . '_' .time;
     my $dir = File::Spec->catdir( $app->config( 'TempDir' ), $out );
-        
+
     require Archive::Zip;
     my $zip = Archive::Zip->new();
     unless ( $zip->read( $archive_path ) == 0 ) {
@@ -926,7 +926,7 @@ sub import_entries {
         my $path = File::Spec->catfile ( $dir, $name );
         $zip->extractMemberWithoutPaths( $member->fileName, $path );
     }
-    
+
     opendir ( DIR, $dir );
     my @target;
     while ( defined ( my $path = readdir( DIR ) ) ) {
@@ -942,7 +942,7 @@ sub import_entries {
         File::Path::rmtree( $entry_dir );
     }
     rmdir $dir;
-    
+
     1;
 }
 
