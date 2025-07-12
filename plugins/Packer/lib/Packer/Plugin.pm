@@ -101,7 +101,7 @@ sub _hdlr_ee_start_export {
     );
     my $total_count = MT->model( $type )->count( \%terms );
     unless ( $total_count ) {
-        return return $app->error( 'Object has not been selected. (Please select objects in current website / blog.)' );
+        return $app->error( 'Object has not been selected. (Please select objects in current website / blog.)' );
     }
 
     my %params = (
@@ -200,7 +200,7 @@ sub _hdlr_ee_exported {
             $dir = File::Spec->catdir( $app->config( 'TempDir' ), $out );
         }
     }
-    return return $app->error( 'Temporary directory is not found.' ) unless $dir && -d $dir;
+    return $app->error( 'Temporary directory is not found.' ) unless $dir && -d $dir;
 
      require MT::Util;
      my @tl = MT::Util::offset_time_list( $t, $blog );
