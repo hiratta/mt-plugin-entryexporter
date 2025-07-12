@@ -19,7 +19,8 @@ use vars qw( %Lexicon );
     'Import [_1]'           => '[_1]のインポート',
     'Start the import.'     => 'インポートを開始します。',
     'An error in the reading of the ZIP file.' => 'ZIPファイルの展開に失敗しました。ファイルが壊れているか、正しくアップロードされなかった可能性があります。',
-    'Export finished.'      => 'エクスポートを完了しました。',
+    'Export finished.'      => 'エクスポートが完了しました。',
+    'Import finished.'      => 'インポートが完了しました。',
     'Importing...(The remnant number of [_1])' => 'インポート中 残り[_1]件',
     'entries'               => 'ブログ記事',
     'pages'                 => 'ウェブページ',
@@ -29,7 +30,7 @@ use vars qw( %Lexicon );
     'The same article found, create duplicate article. id:[_1](src) [_2](dst) title:[_3]'   => '同じ記事が見つかりました。コピーを作成します。 インポート先ID:[_1] インポート先ID:[_2] タイトル:[_3]',
     'Updated \'[_1]\' (ID:[_2]).'   => "「[_1]」(ID:[_2])を上書きしました。",
     'Imported \'[_1]\' to [_2]'     => "[_2]に「[_1]」をインポートしました。",
-    
+
 );
 
 1;
