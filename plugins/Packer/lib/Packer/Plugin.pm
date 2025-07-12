@@ -790,7 +790,7 @@ sub _import_entry {
             my $basename = $field_asset_data->{ basename };
             my $field = 'field.' . $basename;
             my $type = $field_asset_data->{ type };
-            my $val = $field_asset_data->{ val };
+            my $val = $field_asset_data->{ value };
             if ( $val && $val =~ /mt:asset-id="(\d+)"/ ) {
                 my $old_asset_id = $1;
                 my $asset = $assets{ $old_asset_id };
