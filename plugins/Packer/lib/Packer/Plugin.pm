@@ -481,6 +481,8 @@ sub _hdlr_ee_importing {
 
     my $q = $app->param;
     my $override = $app->param( 'override' ) ? 1 : 0;
+    my $force_override = $app->param( 'force_override' ) ? 1 : 0;
+    my $keep_date = $app->param( 'keep_date' ) ? 1 : 0;
     if ( my $fh = $q->upload( 'file' ) ) {
         my $tmp_path = $q->tmpFileName( $fh );
         my $filename = File::Basename::basename( $fh, '.*' );
@@ -507,6 +509,8 @@ sub _hdlr_ee_importing {
             _type           => $type,
             out             => $out,
             override        => $override,
+            force_override  => $force_override,
+            keep_date       => $keep_date,
             magic_token     => $app->current_magic(),
             return_args     => $app->param( 'return_args' ),
         );
@@ -535,7 +539,7 @@ sub _hdlr_ee_importing {
             my $count = 0;
             my $remnant = scalar @target;
             foreach my $entry_dir ( @target ) {
-                _import_entry( $blog, $entry_dir, $override );
+                _import_entry( $blog, $entry_dir, $override, $force_override, $keep_date );
                 File::Path::rmtree( $entry_dir );
                 $remnant--;
                 last if ( ++$count == 10 );
@@ -546,6 +550,8 @@ sub _hdlr_ee_importing {
                 _type           => $type,
                 out             => $out,
                 override        => $override,
+                force_override  => $force_override,
+                keep_date       => $keep_date,
                 magic_token     => $app->current_magic(),
                 return_args     => $app->param( 'return_args' ),
                 remnant         => $remnant,
@@ -561,7 +567,7 @@ sub _hdlr_ee_importing {
 }
 
 sub _import_entry {
-    my ( $blog, $entry_dir, $override ) = @_;
+    my ( $blog, $entry_dir, $override, $force_override, $keep_date ) = @_;
     my $app = MT->instance;
     my $user = $app->user;
     my %objects;
@@ -617,6 +623,14 @@ sub _import_entry {
             $obj->blog_id( $blog->id );
             $obj->created_by( $user ? $user->id : undef );
             $obj->modified_by( undef );
+            if ($keep_date) {
+                if ($asset_data->{ modified_on }) {
+                    $obj->modified_on($asset_data->{ modified_on });
+                }
+                elsif ($asset_data->{ created_on }) {
+                    $obj->modified_on($asset_data->{ created_on });
+                }
+            }
 
             my $src = File::Spec->catfile( $entry_dir, 'assets', $key );
             $fmgr->mkpath( File::Basename::dirname( $obj->file_path ) );
@@ -645,7 +659,7 @@ sub _import_entry {
         my $orig;
         my $obj = $entry_basename ? MT->model( $type )->load( { blog_id => $blog->id, basename => $entry_basename, created_on => $entry_created_on } ) : undef;
         if ( $override ) {
-            if ( $obj && $obj->modified_on > $data->{ modified_on } ) {
+            if ( !$force_override && ($obj && $obj->modified_on > $data->{ modified_on }) ) {
                 _log( $plugin->translate( 'The same article is the latest destination. id:[_1](src) [_2](dst) title:[_3] modified_on:[_4](src) [_5](dst)', $data->{id}, $obj->id, $obj->title, $data->{modified_on}, $obj->modified_on ), $obj->blog );
                 return;
             }
@@ -709,6 +723,14 @@ sub _import_entry {
         $obj->author_id( $user ? $user->id : undef );
         $obj->created_by( $user ? $user->id : undef );
         $obj->modified_by( undef );
+        $obj->modified_on( undef );
+        if ($keep_date) {
+            if( $data->{ modified_on } ) {
+                $obj->modified_on($data->{ modified_on });
+            } elsif ( $entry_created_on ) {
+                $obj->modified_on( $entry_created_on );
+            }
+        }
         $obj->category_id( undef );
 
         my $assets_map_file = File::Spec->catfile( $entry_dir, 'assets_map.yaml' );
